@@ -1,0 +1,39 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // Change this to your database provider
+  url      = env("DATABASE_URL") // Your database connection string
+}
+
+model User {
+  id       String    @id @default(cuid())
+  username String    @unique
+  password String
+  messages Message[] @relation("UserMessages") // Messages sent by the user
+  rooms    Room[]    @relation("RoomMembers") // Rooms the user is a member of
+  Message Message[] @relation("PrivateMessages")
+}
+
+model Room {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  messages Message[] @relation("RoomMessages") // Messages in the room
+  members  User[]    @relation("RoomMembers") // Users who are members of the room
+}
+
+model Message {
+  id          String   @id @default(cuid())
+  content     String
+  createdAt   DateTime @default(now())
+  userId      String // ID of the user who sent the message
+  recipientId String? // Optional field for private messages
+  roomId      String? // Optional field for messages that may not belong to a room
+
+  user      User  @relation("UserMessages", fields: [userId], references: [id]) // Relation to the user who sent the message
+  room      Room? @relation("RoomMessages", fields: [roomId], references: [id]) // Relation to the room the message belongs to
+  recipient User? @relation("PrivateMessages", fields: [recipientId], references: [id]) // Relation to the recipient user for private messages
+}
